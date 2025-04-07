@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './Login';
 import Signup from './Signup';
 import Dashboard from './Dashboard';
-
+import Chat from './Chat';
 
 function App() {
   return (
@@ -11,8 +11,9 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        
+        <Route path="/dashboard" element={<Dashboard />}>
+        <Route path="chat" element={<Chat />} />
+        </Route>
       </Routes>
     </Router>
   );
