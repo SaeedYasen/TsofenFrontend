@@ -4,7 +4,6 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { Box, Drawer, ListItem, ListItemButton, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { Home, ChatBubbleOutline, NotificationsNone, Logout } from '@mui/icons-material';
 
-
 function DashboardLayout() {
   const navigate = useNavigate();
 
@@ -62,6 +61,7 @@ function DashboardLayout() {
         </ListItem>
       </Drawer>
 
+      {/* Main content will be rendered here */}
       <Box sx={{ p: 3, marginLeft: 90, marginTop: 40, width: '100%' }}>
         <Outlet />
       </Box>
