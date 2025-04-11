@@ -9,7 +9,7 @@ function Signup() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const API_URL = process.env.REACT_APP_API_URL;
+  // const API_URL = process.env.REACT_APP_API_URL;
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -17,7 +17,7 @@ function Signup() {
     setMessage('');
 
     try {
-      const response = await axios.post(`${API_URL}/auth/signup`, { username, password });
+      const response = await axios.post('http://127.0.0.1:5000/auth/signup', { username, password });
       setMessage('Signup successful. You can now log in');
       setUsername('');
       setPassword('');
