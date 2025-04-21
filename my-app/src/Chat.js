@@ -1,142 +1,272 @@
-// Chat.js
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, TextField, IconButton, List, ListItem, ListItemText, InputAdornment } from '@mui/material';
+import { Box, TextField, IconButton, List, ListItem, ListItemText, InputAdornment, Divider, Card, Typography, Button, Avatar, Tooltip } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import CircularProgress from '@mui/material/CircularProgress';
+import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ClearAllIcon from '@mui/icons-material/ClearAll';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
 
 const Chat = () => {
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState([]);
+  const [chatHistory, setChatHistory] = useState([
+    { id: 1, title: 'Previous Chat 1', timestamp: new Date() },
+    { id: 2, title: 'Another Session', timestamp: new Date() },
+    { id: 3, title: 'Quick Questions', timestamp: new Date() },
+  ]);
   const [loading, setLoading] = useState(false);
   const chatContainerRef = useRef(null);
+  const topBarRef = useRef(null);
 
-  const apiKey = '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'; // Make sure you have this in your .env file
-
-  useEffect(() => {
-    // Scroll to the bottom whenever messages update
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [messages]);
-
+  
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
 
     setLoading(true);
-    setMessages((prevMessages) => [...prevMessages, { text: inputText, sender: 'user' }]);
+    setMessages((prev) => [...prev, { text: inputText, sender: 'user' }]);
     setInputText('');
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('http://localhost:5000/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({
-          model: 'text-davinci-003', // Or another preferred model
-          messages: [...messages, { role: 'user', content: inputText }],
-        }),
+        body: JSON.stringify({ message: inputText }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('OpenAI API Error:', errorData);
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { text: 'Oops! Something went wrong with the AI.', sender: 'ai', error: true },
-        ]);
-      } else {
-        const data = await response.json();
-        const aiResponse = data.choices[0].message.content;
-        setMessages((prevMessages) => [...prevMessages, { text: aiResponse, sender: 'ai' }]);
-      }
+      const data = await response.json();
+      const aiResponse = data.response;
+      const nextStep = data.next_step;
+
+      setMessages((prev) => [
+        ...prev,
+        { text: aiResponse, sender: 'ai' },
+        ...(nextStep ? [{ text: nextStep, sender: 'ai' }] : []),
+      ]);
     } catch (error) {
-      console.error('Error sending message to OpenAI:', error);
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { text: 'There was a problem communicating with the AI.', sender: 'ai', error: true },
+      console.error('Error:', error);
+      setMessages((prev) => [
+        ...prev,
+        { text: 'خطأ أثناء الاتصال بالخادم.', sender: 'ai', error: true },
       ]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (event) => {
-    setInputText(event.target.value);
-  };
+  const handleInputChange = (e) => setInputText(e.target.value);
 
-  const handleKeyDown = (event) => {
-    if (event.key === 'Enter' && !loading) {
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !loading) {
       handleSendMessage();
     }
+  };
+
+  const handleChatSelection = (chatId) => {
+    console.log(`Selected chat: ${chatId}`);
+    setMessages([
+      { text: `Loaded messages for chat ${chatId}`, sender: 'ai' },
+
+    ]);
   };
 
   return (
     <Box
       sx={{
         display: 'flex',
-        flexDirection: 'column',
-        height: '520px', 
-        padding: 3,
+        height: '80vh',
+        borderRadius: 6,
+        padding: 1,
+        overflow: 'hidden',
+        boxShadow: 'none',
+        backgroundColor: '#f9f9fe',
       }}
     >
+
+
       <Box
-        ref={chatContainerRef}
         sx={{
-          flexGrow: 1,
-          overflowY: 'auto',
-          marginBottom: 2,
-          padding: 1,
+          width: '30%',
+          backgroundColor: '#f9f9fe',
+          borderRight: '1px solid #e0e0e0',
+          padding: 2,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        <List>
-          {messages.map((message, index) => (
-            <ListItem key={index} sx={{ justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start' }}>
-              <ListItemText
-                primary={message.text}
-                secondary={message.sender === 'user' ? 'You' : 'AI'}
-                sx={{
-                  backgroundColor: message.sender === 'user' ? '#e0f7fa' : '#f0f0f0',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  maxWidth: '70%',
-                  wordBreak: 'break-word',
-                }}
-                secondaryTypographyProps={{
-                  align: message.sender === 'user' ? 'right' : 'left',
-                  fontSize: '0.8rem',
-                  color: 'text.secondary',
-                }}
-              />
-            </ListItem>
+        
+
+        <Button color='warning' size='small' variant='outlined'  disableElevation sx={{ mb: 2, padding: 2, borderRadius: 2}}>
+          <AddIcon sx={{ mr: 1 }} />
+          CREATE NEW CHAT
+        </Button>
+
+        <Typography variant="overline" gutterBottom sx={{ paddingLeft: 23 }}>
+          Chat History
+        </Typography>
+        <Divider sx={{ opacity: 2, mb: 2, mr: 5 }} />
+
+        <List sx={{ flexGrow: 1, overflowY: 'auto', mt: 2 }}>
+          {chatHistory.map((chat) => (
+            <Card
+              key={chat.id}
+              variant="outlined"
+              onClick={() => handleChatSelection(chat.id)}
+              sx={{
+                mb: 2,
+                mx: 2,
+                borderRadius: 3,
+                cursor: 'pointer',
+                transition: '0.2s',
+                justifyItems: 'center',
+                boxShadow: 1,
+                '&:hover': {
+                  boxShadow: 3,
+                  backgroundColor: '#f5f5f9',
+                },
+              }}
+            >
+              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                {chat.title}
+              </Typography>
+              <Typography  color="text.secondary">
+                {chat.description}
+              </Typography>
+              <Typography variant="caption" color="text.disabled">
+                {chat.timestamp.toLocaleString()}
+              </Typography>
+            </Card>
           ))}
-          {loading && (
-            <Box sx={{ display: 'flex', justifyContent: 'flex-start', paddingLeft: 2 }}>
-              <CircularProgress size={24} />
-            </Box>
-          )}
         </List>
       </Box>
 
-      <TextField
-        fullWidth
-        variant="outlined"
-        placeholder="Send a message..."
-        value={inputText}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        disabled={loading}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton onClick={handleSendMessage} disabled={loading}>
-                <SendIcon />
-              </IconButton>
-            </InputAdornment>
-          ),
+
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          padding: 6,
+          width: '70%',
         }}
-      />
+      >
+
+        <Box
+          ref={topBarRef}
+          sx={{
+            width: '100%',
+            marginLeft: 7,
+            marginTop: -5,
+            marginBottom: 2,
+            padding: 2,
+            backgroundColor: '#fff',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <Box display="flex" alignItems="center" padding={1} ml={1}>
+            <Avatar sx={{ mr: 1, bgcolor: 'secondary.main', width: 30, height: 30 }}>AI</Avatar>
+            <Typography variant="subtitle1" component="div">
+              GBooking AI
+            </Typography>
+          </Box>
+          <Box>
+            <Tooltip title="Clear Chat">
+              <IconButton size="small" sx={{ ml:2, padding: '6px' }}>
+                <ClearAllIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Save Chat">
+              <IconButton size="small" sx={{ ml: 2, padding: '6px' }}>
+                <SaveAltIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="More Options">
+              <IconButton size="small" sx={{ ml: 2, padding: '6px' }}>
+                <MoreVertIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Box>
+
+
+        <Box
+          ref={chatContainerRef}
+          sx={{
+            flexGrow: 1,
+            overflowY: 'auto',
+            marginBottom: 2,
+            padding: 1,
+            width: '100%',
+          }}
+        >
+          <List>
+            {messages.map((msg, i) => (
+              <ListItem key={i} sx={{ justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start', padding: '8px 0' }}>
+                <ListItemText
+                  primary={msg.text}
+                  secondary={msg.sender === 'user' ? 'You' : 'AI'}
+                  sx={{
+                    backgroundColor: msg.sender === 'user' ? '#e0f7fa' : '#f5f5f5',
+                    padding: '10px 15px',
+                    borderRadius: '10px',
+                    maxWidth: '70%',
+                    wordBreak: 'break-word',
+                    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                  }}
+                  secondaryTypographyProps={{
+                    align: msg.sender === 'user' ? 'right' : 'left',
+                    fontSize: '0.8rem',
+                    color: 'text.secondary',
+                  }}
+                />
+              </ListItem>
+            ))}
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start', paddingLeft: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            )}
+          </List>
+        </Box>
+
+
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Send a message..."
+          value={inputText}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          disabled={loading}
+          autoFocus
+          sx={{
+            marginBottom: 4,
+            borderRadius: '25px',
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '25px',
+              padding: '2px 12px',
+              fontSize: '1rem',
+            },
+          }}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={handleSendMessage} disabled={loading}>
+                  <SendIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
     </Box>
   );
 };

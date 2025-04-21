@@ -1,0 +1,78 @@
+.chat-container {
+  display: flex; /* To potentially align with other elements if needed */
+  flex-direction: column; /* Stack chat elements vertically */
+  height: 100%; /* Or a specific height if you have a fixed layout */
+  border: 1px solid #e0e0e0; /* Light border for definition */
+  border-radius: 8px; /* Slightly rounded corners */
+  overflow: hidden; /* Hide any content that goes beyond the container */
+  background-color: #f9f9f9; /* Light background */
+}
+
+.chat-box {
+  flex-grow: 1; /* Allows the chat box to take up available vertical space */
+  padding: 20px;
+  overflow-y: auto; /* Enables scrolling for long conversations */
+  display: flex;
+  flex-direction: column-reverse; /* Display latest messages at the bottom */
+}
+
+.message {
+  background-color: #fff; /* Default message background */
+  color: #333; /* Dark text for readability */
+  padding: 10px 15px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
+  width: fit-content; /* Only takes up the width of its content */
+  max-width: 80%; /* Prevent messages from taking up the whole width */
+}
+
+.message.user {
+  background-color: #e2f7cb; /* Distinct color for user messages */
+  align-self: flex-end; /* Align user messages to the right */
+  color: #2e510d;
+}
+
+.message.bot {
+  background-color: #f0f0f0; /* Different background for bot messages */
+  align-self: flex-start; /* Align bot messages to the left */
+}
+
+.message strong {
+  font-weight: bold; /* Make the sender's name bold */
+  margin-right: 5px;
+}
+
+.input-container {
+  display: flex;
+  padding: 15px;
+  border-top: 1px solid #e0e0e0; /* Separator line */
+}
+
+.input-container input[type="text"] {
+  flex-grow: 1; /* Input field takes up most of the width */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+.input-container button {
+  background-color: #007bff; /* Primary button color */
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.input-container button:hover {
+  background-color: #0056b3; /* Darker shade on hover */
+}
+
+.message.bot.loading {
+  font-style: italic;
+  color: #777;
+}
