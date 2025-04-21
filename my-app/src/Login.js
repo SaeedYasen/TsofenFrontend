@@ -11,7 +11,7 @@ function Login() {
   const [errorMessage, setErrorMessage] = useState('');
   const [token, setToken] = useState('');
 
-  const API_URL = process.env.REACT_APP_API_URL;
+  // const API_URL = process.env.REACT_APP_API_URL;
 
   const navigate = useNavigate();
 
@@ -20,7 +20,7 @@ function Login() {
   setErrorMessage('');
   
   try {
-    const response = await axios.post(`${API_URL}/auth/login`, { username, password });
+    const response = await axios.post("http://127.0.0.1:5000/auth/login", { username, password });
     const receivedToken = response.data.token;
     if (receivedToken) {
       localStorage.setItem('token', receivedToken);
