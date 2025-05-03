@@ -4,12 +4,23 @@ import axios from 'axios';
 import { Container, Box, TextField, Button, Typography, Alert } from '@mui/material';
 
 function Signup() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    name: '',
+    surname: '',
+    email: '',
+    country_code: '',
+    area_code: '',
+    number: '',
+  });
+
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  // const API_URL = process.env.REACT_APP_API_URL;
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -17,12 +28,20 @@ function Signup() {
     setMessage('');
 
     try {
-      const response = await axios.post('http://127.0.0.1:5000/auth/signup', { username, password });
-      setMessage('Signup successful. You can now log in');
-      setUsername('');
-      setPassword('');
+      const response = await axios.post('http://127.0.0.1:5000/auth/signup', formData);
+      setMessage('Signup successful. You can now log in.');
+      setFormData({
+        username: '',
+        password: '',
+        name: '',
+        surname: '',
+        email: '',
+        country_code: '',
+        area_code: '',
+        number: '',
+      });
     } catch (err) {
-      setError('Signup failed');
+      setError(err.response?.data?.msg || 'Signup failed');
     }
   };
 
@@ -30,54 +49,50 @@ function Signup() {
     <Container maxWidth="xs">
       <Box
         sx={{
-          marginTop: 25,
-          marginLeft: -8,
+          marginTop: 10,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          padding: 12,
+          padding: 4,
           boxShadow: 7,
           borderRadius: 4,
           bgcolor: 'white',
-          width: '100%',
         }}
       >
-        <Typography variant="h5" sx={{ mb: 5 }}>
+        <Typography variant="h5" sx={{ mb: 3 }}>
           Signup
         </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        {message && (
-          <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
-            {message}
-          </Alert>
-        )}
+        {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
+        {message && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{message}</Alert>}
 
-        <TextField
-          label="Username"
-          fullWidth
-          margin="normal"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <TextField
-          label="Password"
-          type="password"
-          fullWidth
-          margin="normal"
-          variant="outlined"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        {[
+          { label: 'Username', name: 'username' },
+          { label: 'Password', name: 'password', type: 'password' },
+          { label: 'Name', name: 'name' },
+          { label: 'Surname', name: 'surname' },
+          { label: 'Email', name: 'email', type: 'email' },
+          { label: 'Country Code', name: 'country_code' },
+          { label: 'Area Code', name: 'area_code' },
+          { label: 'Phone Number', name: 'number' },
+        ].map((field) => (
+          <TextField
+            key={field.name}
+            label={field.label}
+            name={field.name}
+            type={field.type || 'text'}
+            fullWidth
+            margin="normal"
+            value={formData[field.name]}
+            onChange={handleChange}
+          />
+        ))}
+
         <Button
           variant="contained"
           color="primary"
           fullWidth
-          sx={{ mt: 5 }}
+          sx={{ mt: 3 }}
           onClick={handleSignup}
         >
           Signup

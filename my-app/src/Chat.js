@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import {
   Box, TextField, IconButton, List, ListItem, ListItemText, InputAdornment,
@@ -21,37 +21,71 @@ function Chat() {
   const [loading, setLoading] = useState(false);
   const chatContainerRef = useRef(null);
 
-  const handleSend = async () => {
-    if (input.trim() === '') return;
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
 
-    const userMessage = { text: input, sender: 'user' };
+  const handleDoctorSelection = (doctorName) => {
+    // تحقق من أن الطبيب لم يتم اختياره بالفعل في آخر رسالة
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.text === doctorName) {
+      return; // إذا كانت نفس الرسالة، لا تُرسلها
+    }
+  
+    // إضافة رسالة الطبيب إلى الرسائل
+    const doctorMessage = { text: doctorName, sender: 'user' };
+    setMessages((prev) => [...prev, doctorMessage]);
+  
+    // فقط بعد إضافة الرسالة، قم بتصفير النص
+    setInput('');
+  
+    // إرسال الرسالة
+    handleSend(doctorName);
+  };
+  
+  
+
+  const handleSend = async (overrideText = null) => {
+    const messageToSend = overrideText || input;
+    if (messageToSend.trim() === '') return;
+  
+    // تحقق إن كانت نفس الرسالة آخر رسالة أرسلها المستخدم
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.sender === 'user' && lastMessage.text === messageToSend) {
+      return; // تجاهل التكرار
+    }
+  
+    const userMessage = { text: messageToSend, sender: 'user' };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setLoading(true);
-
+  
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post('http://127.0.0.1:5000/api/analyze', {
-        message: userMessage.text,
+        message: messageToSend,
         session_id: localStorage.getItem('username')
       }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
+  
       const aiResponse = response.data.note;
       const nextStep = response.data.next_step;
       const message = response.data.message;
-      const note = response.data.note;
-
-      setMessages((prev) => [
-        ...prev,
-        ...(aiResponse ? [{ text: aiResponse, sender: 'ai' }] : []),
-        ...(note ? [{ text: note, sender: 'ai' }] : []),
-        ...(message ? [{ text: message, sender: 'ai' }] : []),
-        ...(nextStep ? [{ text: nextStep, sender: 'ai' }] : []),
-      ]);
+      const doctors = response.data.doctors;
+  
+      const newMessages = [];
+  
+      if (aiResponse) newMessages.push({ text: aiResponse, sender: 'ai' });
+      if (doctors) newMessages.push({ text: message, doctors: doctors, sender: 'ai', type: 'doctor_list' });
+      else if (message) newMessages.push({ text: message, sender: 'ai' });
+      if (nextStep) newMessages.push({ text: nextStep, sender: 'ai' });
+  
+      setMessages((prev) => [...prev, ...newMessages]);
     } catch (error) {
       console.error('Error:', error);
       setMessages((prev) => [
@@ -62,6 +96,7 @@ function Chat() {
       setLoading(false);
     }
   };
+  
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !loading) {
@@ -189,24 +224,58 @@ function Chat() {
           <List>
             {messages.map((msg, i) => (
               <ListItem key={i} sx={{ justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start' }}>
-                <ListItemText
-                  primary={msg.text}
-                  secondary={msg.sender === 'user' ? 'You' : 'AI'}
+                <Box
                   sx={{
                     backgroundColor: msg.sender === 'user' ? '#e3f2fd' : '#f5f5f5',
                     px: 2,
                     py: 1,
                     borderRadius: 3,
                     maxWidth: '70%',
-                    wordBreak: 'break-word',
                     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
                   }}
-                  secondaryTypographyProps={{
-                    align: msg.sender === 'user' ? 'right' : 'left',
-                    fontSize: '0.75rem',
-                    color: 'text.secondary',
-                  }}
-                />
+                >
+                  {/* معالجة مواعيد */}
+                  {msg.text.startsWith('🕑 هذه المواعيد المتاحة') ? (
+                    <>
+                      <Typography variant="body1">{msg.text.split(':')[0]}:</Typography>
+                      <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
+                        {msg.text.match(/\d{2}:\d{2}/g)?.map((time, index) => (
+                          <Button
+                            key={index}
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleSend(time)}
+                            sx={{ borderRadius: 2, minWidth: '80px' }}
+                          >
+                            {time}
+                          </Button>
+                        ))}
+                      </Box>
+                      <Typography variant="body2" mt={1}>❓ أي ساعة تناسبك؟ اضغط على الزر.</Typography>
+                    </>
+                  ) : (
+                    <Typography variant="body1">{msg.text}</Typography>
+                  )}
+
+                  {msg.type === 'doctor_list' && msg.doctors && (
+                    <Box mt={1} display="flex" flexDirection="column" gap={1}>
+                      {msg.doctors.map((doctor, idx) => (
+                        <Button
+                          key={idx}
+                          variant="contained"
+                          size="small"
+                          sx={{ textTransform: 'none', alignSelf: 'flex-start' }}
+                          onClick={() => handleDoctorSelection(doctor)}
+                        >
+                          {doctor}
+                        </Button>
+                      ))}
+                    </Box>
+                  )}
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    {msg.sender === 'user' ? 'You' : 'AI'}
+                  </Typography>
+                </Box>
               </ListItem>
             ))}
             {loading && (
@@ -237,7 +306,7 @@ function Chat() {
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton onClick={handleSend} disabled={loading}>
+                <IconButton onClick={() => handleSend()} disabled={loading}>
                   <SendIcon />
                 </IconButton>
               </InputAdornment>
