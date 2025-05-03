@@ -30,23 +30,33 @@ function Chat() {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://127.0.0.1:5000/api/chat', {
+      const token = localStorage.getItem('token');
+      const response = await axios.post('http://127.0.0.1:5000/api/analyze', {
         message: userMessage.text,
+        session_id: localStorage.getItem('username')
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      const aiResponse = response.data.response;
+      const aiResponse = response.data.note;
       const nextStep = response.data.next_step;
+      const message = response.data.message;
+      const note = response.data.note;
 
       setMessages((prev) => [
         ...prev,
-        { text: aiResponse, sender: 'ai' },
+        ...(aiResponse ? [{ text: aiResponse, sender: 'ai' }] : []),
+        ...(note ? [{ text: note, sender: 'ai' }] : []),
+        ...(message ? [{ text: message, sender: 'ai' }] : []),
         ...(nextStep ? [{ text: nextStep, sender: 'ai' }] : []),
       ]);
     } catch (error) {
       console.error('Error:', error);
       setMessages((prev) => [
         ...prev,
-        { text: '⚠️ حدث خطأ أثناء الاتصال بالخادم.', sender: 'ai', error: true },
+        { text: '⚠ حدث خطأ أثناء الاتصال بالخادم.', sender: 'ai', error: true },
       ]);
     } finally {
       setLoading(false);
