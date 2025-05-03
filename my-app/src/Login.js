@@ -18,12 +18,15 @@ function Login() {
   const handleLogin = async (e) => {
   e.preventDefault();
   setErrorMessage('');
-  
+
   try {
     const response = await axios.post("http://127.0.0.1:5000/auth/login", { username, password });
     const receivedToken = response.data.token;
     if (receivedToken) {
+      // 1) خزّن الـ JWT
       localStorage.setItem('token', receivedToken);
+      // 2) خزّن اسم المستخدم للـ session_id
+      localStorage.setItem('username', username);
       setToken(receivedToken);
     } else {
       setErrorMessage('Login failed. No token received.');
@@ -32,6 +35,7 @@ function Login() {
     setErrorMessage('Invalid credentials, please try again');
   }
 };
+
 
 
   useEffect(() => {
